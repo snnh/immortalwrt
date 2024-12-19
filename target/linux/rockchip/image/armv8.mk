@@ -262,6 +262,16 @@ define Device/pine64_rockpro64
 endef
 TARGET_DEVICES += pine64_rockpro64
 
+define Device/radxa_e20c
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := E20C
+  DEVICE_DTS := rockchip/rk3528-radxa-e20c
+  UBOOT_DEVICE_NAME := evb-rk3528
+  IMAGE/sysupgrade.img.gz := boot-common | boot-script rk3528 | pine64-img | gzip | append-metadata
+  DEVICE_PACKAGES := kmod-gpio-button-hotplug kmod-r8168 -urngd
+endef
+TARGET_DEVICES += radxa_e20c
+
 define Device/radxa_cm3-io
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := CM3 IO
