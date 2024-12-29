@@ -291,7 +291,7 @@ define Device/radxa_e20c
   UBOOT_DEVICE_NAME := radxa-e20c-rk3528
   BOOT_FLOW := pine64-img
   BOOT_SCRIPT := radxa-e20c
-  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+  DEVICE_PACKAGES := kmod-r8168 kmod-usb-net-cdc-ncm kmod-usb-net-rndis
 endef
 TARGET_DEVICES += radxa_e20c
 
