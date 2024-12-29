@@ -1,3 +1,4 @@
 --- a/arch/arm64/boot/dts/rockchip/Makefile
 +++ b/arch/arm64/boot/dts/rockchip/Makefile
+@@ -81,6 +81,13 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-ro
 +dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3528-radxa-e20c.dtb
