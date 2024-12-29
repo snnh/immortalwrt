@@ -161,6 +161,7 @@ define U-Boot/rockpro64-rk3399
 endef
 
 #rk3528
+
 define U-Boot/evb-rk3528
   BUILD_SUBTARGET:=armv8
   NAME:=RK3528 Evaluation
