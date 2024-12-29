@@ -283,6 +283,18 @@ define Device/radxa_cm3-io
 endef
 TARGET_DEVICES += radxa_cm3-io
 
+define Device/radxa_e20c
+  DEVICE_VENDOR := Radxa
+  DEVICE_MODEL := E20C
+  SOC := rk3568
+  DEVICE_DTS := rockchip/rk3528-radxa-e20c
+  UBOOT_DEVICE_NAME := radxa-e20c-rk3528
+  BOOT_FLOW := pine64-img
+  BOOT_SCRIPT := radxa-e20c
+  DEVICE_PACKAGES := kmod-usb-net-cdc-ncm kmod-usb-net-rndis
+endef
+TARGET_DEVICES += radxa_e20c
+
 define Device/radxa_e25
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := E25
@@ -305,7 +317,7 @@ define Device/radxa_rock-3a
 endef
 TARGET_DEVICES += radxa_rock-3a
 
-define Device/radxa_rock-3b
+define Device/radxa_rock-3b  
   DEVICE_VENDOR := Radxa
   DEVICE_MODEL := ROCK 3B
   SOC := rk3568
