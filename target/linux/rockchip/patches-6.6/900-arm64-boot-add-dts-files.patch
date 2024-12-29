@@ -16,6 +16,7 @@
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-nanopi-r4s-enterprise.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-orangepi.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3399-pinebook-pro.dtb
++dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3528-radxa-e20c.dtb
 @@ -91,19 +93,25 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-so
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-box-demo.dtb
  dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-lubancat-1.dtb
