@@ -160,6 +160,24 @@ define U-Boot/rockpro64-rk3399
     pine64_rockpro64
 endef
 
+#rk3528
+define U-Boot/evb-rk3528
+  BUILD_SUBTARGET:=armv8
+  NAME:=RK3528 Evaluation
+  BUILD_DEVICES:= \
+    armsom_sige1 \
+    hinlink_opc-h28k \
+    hinlink_opc-h29k \
+    hinlink_opc-ht2 \
+    radxa_e20c \
+    widora_mangopi-m28k \
+    widora_mangopi-m28k-pro
+  DEPENDS:=+PACKAGE_u-boot-evb-rk3528:rkbin-rk3528
+  ATF:=rk3528_bl31_v1.17.elf
+  DDR:=rk3528_ddr_1056MHz_v1.10.bin
+  UBOOT_CONFIG:=rk3528
+  SOC:=rk3528
+endef
 
 # RK3566 boards
 
