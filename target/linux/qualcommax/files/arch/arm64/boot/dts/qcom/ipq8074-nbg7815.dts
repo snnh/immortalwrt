@@ -9,6 +9,7 @@
 #include "ipq8074.dtsi"
 #include "ipq8074-hk-cpu.dtsi"
 #include "ipq8074-ess.dtsi"
+#include "ipq8074-nss.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/leds/common.h>
 #include <dt-bindings/input/input.h>
@@ -82,23 +83,12 @@
 	status = "okay";
 };
 
-
 &blsp1_spi1 {
 	pinctrl-0 = <&spi_0_pins>;
 	pinctrl-names = "default";
 	cs-gpios = <0>;
 	status = "okay";
 
-	/*
-	 * Bootloader will find the NAND DT node by the compatible and
-	 * then "fixup" it by adding the partitions from the SMEM table
-	 * using the legacy bindings thus making it impossible for us
-	 * to change the partition table or utilize NVMEM for calibration.
-	 * So add a dummy partitions node that bootloader will populate
-	 * and set it as disabled so the kernel ignores it instead of
-	 * printing warnings due to the broken way bootloader adds the
-	 * partitions.
-	 */
 	partitions {
 		status = "disabled";
 	};
@@ -212,15 +202,12 @@
 			};
 
 			partition@600000 {
+				compatible = "u-boot,env";
 				label = "0:appsblenv";
 				reg = <0x600000 0x10000>;
 
-				nvmem-layout {
-					compatible = "u-boot,env";
-
-					macaddr_lan: ethaddr {
-						#nvmem-cell-cells = <1>;
-					};
+				macaddr_lan: ethaddr {
+					#nvmem-cell-cells = <1>;
 				};
 			};
 
@@ -234,15 +221,6 @@
 				label = "0:ethphyfw";
 				reg = <0x650000 0x80000>;
 				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-
-					aqr_fw: aqr-fw@0 {
-						/* Skip the QCOM MBN Header of 40 bytes */
-						reg = <0x28 0x5f402>;
-					};
-				};
 			};
 
 			partition@6d0000 {
@@ -271,37 +249,29 @@
 	pinctrl-names = "default";
 	reset-gpios = <&tlmm 37 GPIO_ACTIVE_LOW>;
 
-	ethernet-phy-package@0 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "qcom,qca8075-package";
+	qca8075_1: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0>;
-
-		qca8075_0: ethernet-phy@0 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <0>;
-		};
-
-		qca8075_1: ethernet-phy@1 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <1>;
-		};
-
-		qca8075_2: ethernet-phy@2 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <2>;
-		};
-
-		qca8075_3: ethernet-phy@3 {
-			compatible = "ethernet-phy-ieee802.3-c22";
-			reg = <3>;
-		};
 	};
 
-	qca8081: ethernet-phy@28 {
+	qca8075_2: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <1>;
+	};
+
+	qca8075_3: ethernet-phy@2 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <2>;
+	};
+
+	qca8075_4: ethernet-phy@3 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <3>;
+	};
+
+	qca8081: ethernet-phy@4{
 		compatible = "ethernet-phy-id004d.d101";
 		reg = <28>;
-		reset-deassert-us = <10000>;
 		reset-gpios = <&tlmm 31 GPIO_ACTIVE_LOW>;
 	};
 
@@ -309,49 +279,49 @@
 		compatible = "ethernet-phy-ieee802.3-c45";
 		reg = <8>;
 		reset-gpios = <&tlmm 63 GPIO_ACTIVE_LOW>;
-
-		nvmem-cells = <&aqr_fw>;
-		nvmem-cell-names = "firmware";
 	};
 };
 
 &switch {
 	status = "okay";
 
-	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT2 | ESS_PORT3 | ESS_PORT4 | ESS_PORT6)>;
-	switch_wan_bmp = <ESS_PORT5>;
-	switch_mac_mode = <MAC_MODE_PSGMII>;
-	switch_mac_mode1 = <MAC_MODE_SGMII_CHANNEL0>;
-	switch_mac_mode2 = <MAC_MODE_USXGMII>;
+	switch_cpu_bmp = <0x1>;
+	switch_lan_bmp = <0x3e>;
+	switch_wan_bmp = <0x40>;
+	switch_mac_mode = <0x0>;
+	switch_mac_mode1 = <0xf>;
+	switch_mac_mode2 = <0xd>;
+	bm_tick_mode = <0>;
+	tm_tick_mode = <0>;
 
 	qcom,port_phyinfo {
-		port@1 {
+		port@0 {
 			port_id = <1>;
 			phy_address = <0>;
 		};
 
-		port@2 {
+		port@1 {
 			port_id = <2>;
 			phy_address = <1>;
 		};
 
-		port@3 {
+		port@2 {
 			port_id = <3>;
 			phy_address = <2>;
 		};
 
-		port@4 {
+		port@3 {
 			port_id = <4>;
 			phy_address = <3>;
 		};
 
-		port@5 {
+		port@4 {
 			port_id = <5>;
 			phy_address = <28>;
 			port_mac_sel = "QGMAC_PORT";
 		};
 
-		port@6 {
+		port@5 {
 			port_id = <6>;
 			ethernet-phy-ieee802.3-c45;
 			phy_address = <8>;
@@ -365,7 +335,7 @@
 
 &dp1 {
 	status = "okay";
-	phy-handle = <&qca8075_0>;
+	phy-handle = <&qca8075_1>;
 	label = "lan1";
 	nvmem-cells = <&macaddr_lan 0>;
 	nvmem-cell-names = "mac-address";
@@ -373,7 +343,7 @@
 
 &dp2 {
 	status = "okay";
-	phy-handle = <&qca8075_1>;
+	phy-handle = <&qca8075_2>;
 	label = "lan2";
 	nvmem-cells = <&macaddr_lan 0>;
 	nvmem-cell-names = "mac-address";
@@ -381,7 +351,7 @@
 
 &dp3 {
 	status = "okay";
-	phy-handle = <&qca8075_2>;
+	phy-handle = <&qca8075_3>;
 	label = "lan3";
 	nvmem-cells = <&macaddr_lan 0>;
 	nvmem-cell-names = "mac-address";
@@ -389,7 +359,7 @@
 
 &dp4 {
 	status = "okay";
-	phy-handle = <&qca8075_3>;
+	phy-handle = <&qca8075_4>;
 	label = "lan4";
 	nvmem-cells = <&macaddr_lan 0>;
 	nvmem-cell-names = "mac-address";
@@ -397,7 +367,6 @@
 
 &dp5 {
 	status = "okay";
-	phy-mode = "sgmii";
 	phy-handle = <&qca8081>;
 	label = "wan";
 	nvmem-cells = <&macaddr_lan 1>;
@@ -406,7 +375,6 @@
 
 &dp6_syn {
 	status = "okay";
-	phy-mode = "usxgmii";
 	phy-handle = <&aqr113c>;
 	label = "10g";
 	nvmem-cells = <&macaddr_lan 0>;

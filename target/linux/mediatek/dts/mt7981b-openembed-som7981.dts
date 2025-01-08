@@ -12,10 +12,9 @@
 	compatible = "openembed,som7981", "mediatek,mt7981";
 
 	aliases {
-		led-boot = &act_led;
-		led-failsafe = &act_led;
-		led-running = &act_led;
-		led-upgrade = &act_led;
+		led-boot = &wlan5g_led;
+		led-failsafe = &wlan5g_led;
+		led-upgrade = &wlan5g_led;
 		serial0 = &uart0;
 	};
 
@@ -46,27 +45,22 @@
 		compatible = "gpio-leds";
 
 		led-0 {
-			function = LED_FUNCTION_LAN;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:lan";
 			gpios = <&pio 8 GPIO_ACTIVE_LOW>;
 		};
 
 		led-1 {
-			function = LED_FUNCTION_LAN;
-			color = <LED_COLOR_ID_AMBER>;
+			label = "amber:lan";
 			gpios = <&pio 13 GPIO_ACTIVE_LOW>;
 		};
 
 		led-2 {
-			function = LED_FUNCTION_PANIC;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:wlan2g";
 			gpios = <&pio 34 GPIO_ACTIVE_LOW>;
-			panic-indicator;
 		};
 
-		act_led: led-3 {
-			function = LED_FUNCTION_ACTIVITY;
-			color = <LED_COLOR_ID_RED>;
+		wlan5g_led: led-3 {
+			label = "red:wlan5g";
 			gpios = <&pio 35 GPIO_ACTIVE_LOW>;
 		};
 	};
@@ -285,12 +279,6 @@
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
 	status = "okay";
-
-	band@1 {
-		reg = <1>;
-		nvmem-cells = <&macaddr_factory_a 0>;
-		nvmem-cell-names = "mac-address";
-	};
 };
 
 &xhci {

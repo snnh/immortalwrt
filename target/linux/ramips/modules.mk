@@ -4,27 +4,6 @@
 
 OTHER_MENU:=Other modules
 
-define KernelPackage/mmc-mtk
-  SUBMENU:=Other modules
-  TITLE:=MediaTek SD/MMC Card Interface support
-  DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
-  KCONFIG:= \
-	CONFIG_MMC \
-	CONFIG_MMC_MTK \
-	CONFIG_MMC_CQHCI
-  FILES:= \
-	$(LINUX_DIR)/drivers/mmc/host/cqhci.ko \
-	$(LINUX_DIR)/drivers/mmc/host/mtk-sd.ko
-  AUTOLOAD:=$(call AutoProbe,cqhci mtk-sd,1)
-endef
-
-define KernelPackage/mmc-mtk/description
-  MediaTek(R) Secure digital and Multimedia card Interface.
-  This is needed if support for any SD/SDIO/MMC devices is required.
-endef
-
-$(eval $(call KernelPackage,mmc-mtk))
-
 define KernelPackage/pwm-mediatek-ramips
   SUBMENU:=Other modules
   TITLE:=MT7628 PWM
@@ -47,7 +26,6 @@ $(eval $(call KernelPackage,pwm-mediatek-ramips))
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
   TITLE:=MT7620 SDCI
-  CONFLICTS:=kmod-mmc-mtk
   DEPENDS:=@(TARGET_ramips_mt7620||TARGET_ramips_mt76x8||TARGET_ramips_mt7621) +kmod-mmc
   KCONFIG:= \
 	CONFIG_MTK_MMC \
@@ -96,18 +74,19 @@ $(eval $(call KernelPackage,i2c-mt7628))
 define KernelPackage/dma-ralink
   SUBMENU:=Other modules
   TITLE:=Ralink GDMA Engine
-  DEPENDS:=@TARGET_ramips @!TARGET_ramips_rt288x
+  DEPENDS:=@TARGET_ramips
   KCONFIG:= \
 	CONFIG_DMADEVICES=y \
-	CONFIG_RALINK_GDMA
+	CONFIG_DW_DMAC_PCI=n \
+	CONFIG_DMA_RALINK
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
-	$(LINUX_DIR)/drivers/dma/ralink-gdma.ko
+	$(LINUX_DIR)/drivers/staging/ralink-gdma/ralink-gdma.ko
   AUTOLOAD:=$(call AutoLoad,52,ralink-gdma)
 endef
 
 define KernelPackage/dma-ralink/description
- Kernel modules for enable ralink gdma engine.
+ Kernel modules for enable ralink dma engine.
 endef
 
 $(eval $(call KernelPackage,dma-ralink))
@@ -118,10 +97,11 @@ define KernelPackage/hsdma-mtk
   DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621
   KCONFIG:= \
 	CONFIG_DMADEVICES=y \
+	CONFIG_DW_DMAC_PCI=n \
 	CONFIG_MTK_HSDMA
   FILES:= \
 	$(LINUX_DIR)/drivers/dma/virt-dma.ko \
-	$(LINUX_DIR)/drivers/dma/mediatek/hsdma-mt7621.ko
+	$(LINUX_DIR)/drivers/staging/mt7621-dma/hsdma-mt7621.ko
   AUTOLOAD:=$(call AutoLoad,53,hsdma-mt7621)
 endef
 
@@ -152,3 +132,18 @@ define KernelPackage/sound-mt7620/description
 endef
 
 $(eval $(call KernelPackage,sound-mt7620))
+
+define KernelPackage/mtk-hnat
+  SUBMENU:=Network Devices
+  TITLE:=MediaTek MT762x HW NAT driver
+  DEPENDS:=@TARGET_ramips @TARGET_ramips_mt7621 +kmod-nf-flow
+  KCONFIG:= \
+	CONFIG_BRIDGE_NETFILTER=y \
+	CONFIG_NET_MEDIATEK_HNAT \
+	CONFIG_NETFILTER_FAMILY_BRIDGE=y
+  FILES:= \
+	$(LINUX_DIR)/drivers/net/ethernet/mtk/mtk_hnat/mtkhnat.ko
+  AUTOLOAD:=$(call AutoLoad,55,mtkhnat)
+endef
+
+$(eval $(call KernelPackage,mtk-hnat))

@@ -90,7 +90,6 @@
 	managed = "in-band-status";
 	phy-mode = "usxgmii";
 	status = "okay";
-	openwrt,netdev-name = "sfp-wan";
 };
 
 &switch {
@@ -361,14 +360,14 @@
 				ubi-volume-ubootenv {
 					volname = "ubootenv";
 					nvmem-layout {
-						compatible = "u-boot,env-redundant-bool";
+						compatible = "u-boot,env-redundant-bool-layout";
 					};
 				};
 
 				ubi-volume-ubootenv2 {
 					volname = "ubootenv2";
 					nvmem-layout {
-						compatible = "u-boot,env-redundant-bool";
+						compatible = "u-boot,env-redundant-bool-layout";
 					};
 				};
 

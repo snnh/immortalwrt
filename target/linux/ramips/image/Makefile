@@ -7,11 +7,11 @@ include $(INCLUDE_DIR)/image.mk
 
 DEVICE_VARS += LOADER_TYPE LOADER_FLASH_OFFS LZMA_TEXT_START
 DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_HW_ID
-DEVICE_VARS += NETGEAR_ENC_MODEL NETGEAR_ENC_REGION NETGEAR_ENC_HW_ID_LIST NETGEAR_ENC_MODEL_LIST
 DEVICE_VARS += BUFFALO_TAG_PLATFORM BUFFALO_TAG_VERSION BUFFALO_TAG_MINOR
 DEVICE_VARS += SEAMA_SIGNATURE SEAMA_MTDBLOCK
 DEVICE_VARS += SERCOMM_HWNAME SERCOMM_HWID SERCOMM_HWVER SERCOMM_SWVER
 DEVICE_VARS += SERCOMM_PAD JCG_MAXSIZE
+DEVICE_VARS += SERCOMM_KERNEL_OFFSET SERCOMM_ROOTFS_OFFSET
 
 loadaddr-y := 0x80000000
 loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000
@@ -29,9 +29,14 @@ LOADER_FLASH_START := $(ldrflashstart-y)
 
 KERNEL_DTB = kernel-bin | append-dtb | lzma
 
+define Build/edimax-header
+	$(STAGING_DIR_HOST)/bin/mkedimaximg -i $@ -o $@.new $(1)
+	@mv $@.new $@
+endef
+
 define Build/jcg-header
 	$(STAGING_DIR_HOST)/bin/jcgimage -v $(1) \
-		$(if $(JCG_MAXSIZE), -m $$(($(call exp_units,$(JCG_MAXSIZE)))),) \
+		$(if $(JCG_MAXSIZE), -m $$(($(subst k, * 1024,$(JCG_MAXSIZE)))),) \
 		-u $@ -o $@.new
 	mv $@.new $@
 endef
@@ -44,7 +49,6 @@ define Build/loader-common
 		BOARD="$(BOARDNAME)" PLATFORM="$(LOADER_PLATFORM)" \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 		LOADADDR=$(LOADADDR) \
-		SUBTARGET=$(SUBTARGET) \
 		$(1) compile loader.$(LOADER_TYPE)
 	mv "$@.$(LOADER_TYPE)" "$@"
 	rm -rf $@.src
@@ -87,16 +91,6 @@ define Build/mkdlinkfw-factory
 	mv $@.new $@
 endef
 
-define Build/mkdlinkfw-loader
-	-$(STAGING_DIR_HOST)/bin/mkdlinkfw \
-		-k $(KDIR)/loader-$(DEVICE_NAME).bin \
-		-r $@ \
-		-o $@.new \
-		$(if $(DLINK_IMAGE_OFFSET), -O $(DLINK_IMAGE_OFFSET)) \
-		-s $(DLINK_FIRMWARE_SIZE)
-	mv $@.new $@
-endef
-
 define Build/netis-tail
 	echo -n $(1) >> $@
 	echo -n $(UIMAGE_NAME)-yun | $(MKHASH) md5 | \
@@ -111,7 +105,7 @@ endef
 define Build/relocate-kernel
 	rm -rf $@.relocate
 	$(CP) ../../generic/image/relocate $@.relocate
-	$(MAKE) -C $@.relocate KERNEL_ADDR=$(if $(1),$(1),$(KERNEL_LOADADDR)) CROSS_COMPILE=$(TARGET_CROSS)
+	$(MAKE) -C $@.relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
 	( \
 		dd if=$@.relocate/loader.bin bs=32 conv=sync && \
 		perl -e '@s = stat("$@"); print pack("V", @s[7])' && \
@@ -123,6 +117,12 @@ endef
 
 define Build/sercom-footer
 	$(call Build/sercom-seal,-f)
+endef
+
+define Build/sercomm-kernel
+	$(TOPDIR)/scripts/sercomm-kernel.sh $@ \
+		$(SERCOMM_KERNEL_OFFSET) \
+		$(SERCOMM_ROOTFS_OFFSET)
 endef
 
 define Build/sercom-seal
@@ -140,21 +140,15 @@ define Build/sign-dlink-ru
 endef
 
 define Build/trx
-	-$(STAGING_DIR_HOST)/bin/trx $(1) \
+	$(STAGING_DIR_HOST)/bin/trx $(1) \
 		-o $@ \
-		-m $$(($(call exp_units,$(IMAGE_SIZE)))) \
+		-m $$(($(subst k, * 1024,$(IMAGE_SIZE)))) \
 		-f $(IMAGE_KERNEL) \
 		-a 4 -f $(IMAGE_ROOTFS)
 endef
 
 define Build/uimage-padhdr
 	uimage_padhdr $(if $(1),-l $(1)) -i $@ -o $@.new
-	mv $@.new $@
-endef
-
-define Build/uimage-sgehdr
-	uimage_sgehdr -i $@ -o $@.new -m $(DEVICE_MODEL) \
-		-h $(DEVICE_VARIANT) -s V1.00000
 	mv $@.new $@
 endef
 
@@ -167,19 +161,18 @@ define Build/wrg-header
 	mv $@.new $@
 endef
 
+define Build/zyimage
+	$(STAGING_DIR_HOST)/bin/zyimage $(1) $@
+endef
+
 define Device/Default
   PROFILES = Default
-  BLOCKSIZE := 64k
-  KERNEL := $(KERNEL_DTB) | uImage lzma
   KERNEL_LOADADDR := $(loadaddr-y)
   LZMA_TEXT_START := 0x81800000
+  KERNEL := $(KERNEL_DTB) | uImage lzma
   SOC := $(DEFAULT_SOC)
   DEVICE_DTS_DIR := ../dts
   DEVICE_DTS = $$(SOC)_$(1)
-  NETGEAR_ENC_MODEL :=
-  NETGEAR_ENC_REGION :=
-  NETGEAR_ENC_HW_ID_LIST :=
-  NETGEAR_ENC_MODEL_LIST :=
   IMAGES := sysupgrade.bin
   COMPILE :=
   sysupgrade_bin := append-kernel | append-rootfs | pad-rootfs
@@ -187,6 +180,7 @@ define Device/Default
 endef
 
 define Device/netgear_sercomm_nor
+  BLOCKSIZE := 64k
   DEVICE_VENDOR := NETGEAR
   IMAGES += factory.img
   IMAGE/default := append-kernel | pad-to $$$$(BLOCKSIZE) | append-rootfs | \
@@ -214,15 +208,7 @@ endef
 
 define Device/uimage-lzma-loader
   LOADER_TYPE := bin
-  KERNEL/lzma-loader := kernel-bin | append-dtb | lzma | loader-kernel
-  KERNEL := $$(KERNEL/lzma-loader) | uImage none
-endef
-
-define Device/seama-lzma-loader
-  $(Device/seama)
-  $(Device/uimage-lzma-loader)
-  KERNEL := $$(KERNEL/lzma-loader) | relocate-kernel | lzma -a0
-  KERNEL_INITRAMFS := $$(KERNEL/lzma-loader) | uImage none
+  KERNEL := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
 endef
 
 include $(SUBTARGET).mk

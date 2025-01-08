@@ -11,37 +11,41 @@
 		led-failsafe = &led_power_red;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
+		led-usb = &led_usb_green;
 	};
 
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		poll-interval = <20>;
 
 		wps {
 			label = "wps";
-			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 3 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_WPS_BUTTON>;
 			debounce-interval = <60>;
 		};
 
 		reset {
 			label = "reset";
-			gpios = <&gpio 33 GPIO_ACTIVE_LOW>;
+			gpios = <&pinctrl 33 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
 			debounce-interval = <60>;
 		};
 	};
 
 	bcm43217-sprom {
-		compatible = "brcm,bcma-sprom";
+		compatible = "brcm,bcm43217-sprom";
 
 		pci-bus = <1>;
 		pci-dev = <0>;
 
-		nvmem-cells = <&macaddr_cfe_6a0 1>;
+		nvmem-cells = <&macaddr_cfe_6a0>;
 		nvmem-cell-names = "mac-address";
+		mac-address-increment = <1>;
 
-		brcm,sprom = "brcm/bcm43217-sprom.bin";
 		brcm,sprom-fixups = <6 0x1c00>,
 				    <65 0x1255>,
 				    <97 0xfe55>,
@@ -63,7 +67,7 @@
 &ethernet {
 	status = "okay";
 
-	nvmem-cells = <&macaddr_cfe_6a0 0>;
+	nvmem-cells = <&macaddr_cfe_6a0>;
 	nvmem-cell-names = "mac-address";
 };
 
@@ -85,22 +89,10 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
+			cfe: partition@0 {
 				reg = <0x000000 0x010000>;
 				label = "cfe";
 				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_cfe_6a0: macaddr@6a0 {
-						compatible = "mac-base";
-						reg = <0x6a0 0x6>;
-						#nvmem-cell-cells = <1>;
-					};
-				};
 			};
 
 			partition@10000 {
@@ -128,53 +120,50 @@
 	led@0 {
 		reg = <0>;
 		active-low;
-		function = LED_FUNCTION_WPS;
-		color = <LED_COLOR_ID_GREEN>;
+		label = "green:wps";
 	};
 
 	led_power_green: led@1 {
 		reg = <1>;
 		active-low;
-		function = LED_FUNCTION_POWER;
-		color = <LED_COLOR_ID_GREEN>;
+		label = "green:power";
 	};
 
-	led@2 {
+	led_usb_green: led@2 {
 		reg = <2>;
 		active-low;
-		function = LED_FUNCTION_USB;
-		color = <LED_COLOR_ID_GREEN>;
+		label = "green:usb";
 	};
 
 	led@4 {
-		/* EPHY0 Act */
 		reg = <4>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <4>;
+		/* EPHY0 Act */
 	};
 
 	led@5 {
-		/* EPHY1 Act */
 		reg = <5>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <5>;
+		/* EPHY1 Act */
 	};
 
 	led@6 {
-		/* EPHY2 Act */
 		reg = <6>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <6>;
+		/* EPHY2 Act */
 	};
 
 	led@7 {
-		/* EPHY3 Act */
 		reg = <7>;
 		brcm,hardware-controlled;
 		brcm,link-signal-sources = <7>;
+		/* EPHY3 Act */
 	};
 
-	led@8 {
+	led_internet_green: led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";
@@ -186,7 +175,7 @@
 		label = "red:internet";
 	};
 
-	led@10 {
+	led_dsl_green: led@10 {
 		reg = <10>;
 		active-low;
 		label = "green:dsl";
@@ -195,9 +184,7 @@
 	led_power_red: led@11 {
 		reg = <11>;
 		active-low;
-		function = LED_FUNCTION_POWER;
-		color = <LED_COLOR_ID_RED>;
-		panic-indicator;
+		label = "red:power";
 	};
 };
 
@@ -226,7 +213,6 @@
 			label = "lan4";
 
 			phy-handle = <&phy1>;
-			phy-mode = "mii";
 		};
 
 		port@1 {
@@ -234,7 +220,6 @@
 			label = "lan3";
 
 			phy-handle = <&phy2>;
-			phy-mode = "mii";
 		};
 
 		port@2 {
@@ -242,7 +227,6 @@
 			label = "lan2";
 
 			phy-handle = <&phy3>;
-			phy-mode = "mii";
 		};
 
 		port@3 {
@@ -250,7 +234,6 @@
 			label = "lan1";
 
 			phy-handle = <&phy4>;
-			phy-mode = "mii";
 		};
 	};
 };
@@ -261,4 +244,14 @@
 
 &usbh {
 	status = "okay";
+};
+
+&cfe {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_cfe_6a0: macaddr@6a0 {
+		reg = <0x6a0 0x6>;
+	};
 };

@@ -39,7 +39,6 @@
 #include <linux/spinlock.h>
 #include <linux/platform_device.h>
 #include <linux/interrupt.h>
-#include <linux/of.h>
 
 #include <linux/mmc/host.h>
 #include <linux/mmc/mmc.h>
@@ -100,6 +99,7 @@
 #define MAX_SGMT_SZ         (MAX_DMA_CNT)
 #define MAX_REQ_SZ          (MAX_SGMT_SZ * 8)
 
+static int host_max_mclk = HOST_MAX_MCLK;
 static int cd_active_low = 1;
 
 //=================================
@@ -456,7 +456,7 @@ static void msdc_tasklet_card(struct work_struct *work)
 	host->card_inserted = inserted;
 
 	if (!host->suspend) {
-		host->mmc->f_max = HOST_MAX_MCLK;
+		host->mmc->f_max = host_max_mclk;
 		mmc_detect_change(host->mmc, msecs_to_jiffies(20));
 	}
 
@@ -2204,11 +2204,18 @@ static void msdc_init_gpd_bd(struct msdc_host *host, struct msdc_dma *dma)
 
 static int msdc_drv_probe(struct platform_device *pdev)
 {
+	struct resource *res;
 	__iomem void *base;
 	struct mmc_host *mmc;
 	struct msdc_host *host;
 	struct msdc_hw *hw;
 	int ret;
+
+	//FIXME: this should be done by pinconf and not by the sd driver
+	if ((ralink_soc == MT762X_SOC_MT7688 ||
+	     ralink_soc == MT762X_SOC_MT7628AN) &&
+	    (!(rt_sysc_r32(0x60) & BIT(15))))
+		rt_sysc_m32(0xf << 17, 0xf << 17, 0x3c);
 
 	hw = &msdc0_hw;
 
@@ -2220,16 +2227,20 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	if (!mmc)
 		return -ENOMEM;
 
-	base = devm_platform_ioremap_resource(pdev, 0);
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	base = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(base)) {
 		ret = PTR_ERR(base);
 		goto host_free;
 	}
 
+	if (of_property_read_u32(pdev->dev.of_node, "max-frequency", &ret) == 0)
+		host_max_mclk = ret;
+
 	/* Set host parameters to mmc */
 	mmc->ops        = &mt_msdc_ops;
 	mmc->f_min      = HOST_MIN_MCLK;
-	mmc->f_max      = HOST_MAX_MCLK;
+	mmc->f_max      = host_max_mclk;
 	mmc->ocr_avail  = MSDC_OCR_AVAIL;
 
 	mmc->caps   = MMC_CAP_MMC_HIGHSPEED | MMC_CAP_SD_HIGHSPEED;
@@ -2237,7 +2248,7 @@ static int msdc_drv_probe(struct platform_device *pdev)
 	//TODO: read this as bus-width from dt (via mmc_of_parse)
 	mmc->caps  |= MMC_CAP_4_BIT_DATA;
 
-	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "cd-inverted");
+	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "mediatek,cd-high");
 
 	if (of_property_read_bool(pdev->dev.of_node, "mediatek,cd-poll"))
 		mmc->caps |= MMC_CAP_NEEDS_POLL;

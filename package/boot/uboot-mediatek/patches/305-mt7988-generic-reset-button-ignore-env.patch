@@ -1,9 +1,10 @@
 --- a/board/mediatek/mt7988/mt7988_rfb.c
 +++ b/board/mediatek/mt7988/mt7988_rfb.c
-@@ -4,7 +4,42 @@
+@@ -4,7 +4,43 @@
   * Author: Sam Shih <sam.shih@mediatek.com>
   */
  
++#include <common.h>
 +#include <config.h>
 +#include <dm.h>
 +#include <button.h>

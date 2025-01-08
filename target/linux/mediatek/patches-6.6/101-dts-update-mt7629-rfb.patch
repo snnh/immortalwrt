@@ -40,23 +40,21 @@
  			};
  		};
  	};
-@@ -273,3 +282,19 @@
+@@ -273,3 +282,17 @@
  	pinctrl-0 = <&watchdog_pins>;
  	status = "okay";
  };
 +
 +&factory {
-+	nvmem-layout {
-+		compatible = "fixed-layout";
-+		#address-cells = <1>;
-+		#size-cells = <1>;
++	compatible = "nvmem-cells";
++	#address-cells = <1>;
++	#size-cells = <1>;
 +
-+		macaddr_factory_24: macaddr@24 {
-+			reg = <0x24 0x6>;
-+		};
++	macaddr_factory_24: macaddr@24 {
++		reg = <0x24 0x6>;
++	};
 +
-+		macaddr_factory_2a: macaddr@2a {
-+			reg = <0x2a 0x6>;
-+		};
++	macaddr_factory_2a: macaddr@2a {
++		reg = <0x2a 0x6>;
 +	};
 +};

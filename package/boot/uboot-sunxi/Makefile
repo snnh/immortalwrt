@@ -15,8 +15,6 @@ PKG_HASH:=b99611f1ed237bf3541bdc8434b68c96a6e05967061f992443cb30aabebef5b3
 
 PKG_MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
-UBOOT_USE_INTREE_DTC:=1
-
 include $(INCLUDE_DIR)/u-boot.mk
 include $(INCLUDE_DIR)/package.mk
 
@@ -138,12 +136,6 @@ define U-Boot/Linksprite_pcDuino
   BUILD_SUBTARGET:=cortexa8
   NAME:=Linksprite pcDuino
   BUILD_DEVICES:=linksprite_a10-pcduino
-endef
-
-define U-Boot/LicheePi_Zero
-  BUILD_SUBTARGET:=cortexa7
-  NAME:=Lichee Pi Zero V3s
-  BUILD_DEVICES:=licheepi_licheepi-zero-dock
 endef
 
 define U-Boot/Linksprite_pcDuino3
@@ -395,7 +387,6 @@ UBOOT_TARGETS := \
 	Marsboard_A10 \
 	Mele_M9 \
 	OLIMEX_A13_SOM \
-	LicheePi_Zero \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 	Linksprite_pcDuino3_Nano \

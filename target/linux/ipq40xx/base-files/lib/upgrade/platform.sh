@@ -4,33 +4,143 @@ REQUIRE_IMAGE_METADATA=1
 RAMFS_COPY_BIN='fw_printenv fw_setenv'
 RAMFS_COPY_DATA='/etc/fw_env.config /var/lock/fw_printenv.lock'
 
+ubi_kill_if_exist() {
+	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+	local c_ubivol="$( nand_find_volume $ubidev $1 )"
+	umount -f /dev/$c_ubivol 2>/dev/null
+	[ "$c_ubivol" ] && ubirmvol /dev/$ubidev -N $1 || true
+	echo "Partition $1 removed."
+}
+
+# idea from @981213
+# Tar sysupgrade for ASUS RT-AC82U/RT-AC58U
+# An ubi repartition is required due to the strange partition table created by Asus.
+# We create all the factory partitions to make sure that the U-boot tftp recovery still works.
+# The reserved kernel partition size should be enough to put the factory image in.
+asus_nand_upgrade_tar() {
+	local kpart_size="$1"
+	local tar_file="$2"
+
+	local board_dir=$(tar tf $tar_file | grep -m 1 '^sysupgrade-.*/$')
+	board_dir=${board_dir%/}
+
+	local kernel_length=`(tar xf $tar_file ${board_dir}/kernel -O | wc -c) 2> /dev/null`
+	local rootfs_length=`(tar xf $tar_file ${board_dir}/root -O | wc -c) 2> /dev/null`
+
+	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
+	if [ ! "$mtdnum" ]; then
+		echo "cannot find ubi mtd partition $CI_UBIPART"
+		return 1
+	fi
+
+	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+	if [ ! "$ubidev" ]; then
+		ubiattach -m "$mtdnum"
+		sync
+		ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+	fi
+
+	if [ ! "$ubidev" ]; then
+		echo "cannot find ubi device $CI_UBIPART"
+		return 1
+	fi
+
+	local root_ubivol="$( nand_find_volume $ubidev rootfs )"
+	# remove ubiblock device of rootfs
+	local root_ubiblk="ubiblock${root_ubivol:3}"
+	if [ "$root_ubivol" -a -e "/dev/$root_ubiblk" ]; then
+		echo "removing $root_ubiblk"
+		if ! ubiblock -r /dev/$root_ubivol; then
+			echo "cannot remove $root_ubiblk"
+			return 1;
+		fi
+	fi
+
+	ubi_kill_if_exist rootfs_data
+	ubi_kill_if_exist rootfs
+	ubi_kill_if_exist jffs2
+	ubi_kill_if_exist linux2
+	ubi_kill_if_exist linux
+
+	ubimkvol /dev/$ubidev -N linux -s $kpart_size
+	ubimkvol /dev/$ubidev -N linux2 -s $kpart_size
+	ubimkvol /dev/$ubidev -N jffs2 -s 2539520
+	ubimkvol /dev/$ubidev -N rootfs -s $rootfs_length
+	ubimkvol /dev/$ubidev -N rootfs_data -m
+
+	local kern_ubivol="$(nand_find_volume $ubidev $CI_KERNPART)"
+	echo "Kernel at $kern_ubivol.Writing..."
+	tar xf $tar_file ${board_dir}/kernel -O | \
+		ubiupdatevol /dev/$kern_ubivol -s $kernel_length -
+	echo "Done."
+
+	local root_ubivol="$(nand_find_volume $ubidev rootfs)"
+	echo "Rootfs at $root_ubivol.Writing..."
+	tar xf $tar_file ${board_dir}/root -O | \
+		ubiupdatevol /dev/$root_ubivol -s $rootfs_length -
+	echo "Done."
+
+	nand_do_upgrade_success
+}
+
+# idea from @981213
+# Factory image sysupgrade for ASUS RT-AC82U/RT-AC58U
+# Delete all the partitions we created before, create "linux" partition and write factory image in.
+# Skip the first 64bytes which is an uImage header to verify the firmware.
+# The kernel partition size should be the original one.
+asus_nand_upgrade_factory() {
+	local kpart_size="$1"
+	local fw_file="$2"
+
+	local mtdnum="$( find_mtd_index "$CI_UBIPART" )"
+	if [ ! "$mtdnum" ]; then
+		echo "cannot find ubi mtd partition $CI_UBIPART"
+		return 1
+	fi
+
+	local ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+	if [ ! "$ubidev" ]; then
+		ubiattach -m "$mtdnum"
+		sync
+		ubidev="$( nand_find_ubi "$CI_UBIPART" )"
+	fi
+
+	if [ ! "$ubidev" ]; then
+		echo "cannot find ubi device $CI_UBIPART"
+		return 1
+	fi
+
+	local root_ubivol="$( nand_find_volume $ubidev rootfs )"
+	# remove ubiblock device of rootfs
+	local root_ubiblk="ubiblock${root_ubivol:3}"
+	if [ "$root_ubivol" -a -e "/dev/$root_ubiblk" ]; then
+		echo "removing $root_ubiblk"
+		if ! ubiblock -r /dev/$root_ubivol; then
+			echo "cannot remove $root_ubiblk"
+			return 1;
+		fi
+	fi
+
+	ubi_kill_if_exist rootfs_data
+	ubi_kill_if_exist rootfs
+	ubi_kill_if_exist jffs2
+	ubi_kill_if_exist linux2
+	ubi_kill_if_exist linux
+
+	ubimkvol /dev/$ubidev -N linux -s $kpart_size
+
+	local kern_ubivol="$(nand_find_volume $ubidev $CI_KERNPART)"
+	echo "Asus linux at $kern_ubivol.Writing..."
+	ubiupdatevol /dev/$kern_ubivol --skip=64 $fw_file
+	echo "Done."
+
+	umount -a
+	reboot -f
+}
+
 platform_check_image() {
 	case "$(board_name)" in
-	asus,rt-ac42u |\
-	asus,rt-ac58u)
-		local ubidev=$(nand_find_ubi $CI_UBIPART)
-		local asus_root=$(nand_find_volume $ubidev jffs2)
-
-		[ -n "$asus_root" ] || return 0
-
-		cat << EOF
-jffs2 partition is still present.
-There's probably no space left
-to install the filesystem.
-
-You need to delete the jffs2 partition first:
-# ubirmvol /dev/ubi0 --name=jffs2
-
-Once this is done. Retry.
-EOF
-		return 1
-		;;
-	zte,mf18a |\
-	zte,mf282plus|\
 	zte,mf286d |\
-	zte,mf287|\
-	zte,mf287plus |\
-	zte,mf287pro |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		local mtdnum="$( find_mtd_index $CI_UBIPART )"
@@ -116,16 +226,13 @@ platform_do_upgrade() {
 	edgecore,ecw5211 |\
 	edgecore,oap100 |\
 	engenius,eap2200 |\
-	glinet,gl-a1300 |\
 	glinet,gl-ap1300 |\
 	luma,wrtq-329acn |\
 	mobipromo,cm520-79f |\
-	netgear,lbr20 |\
 	netgear,wac510 |\
 	p2w,r619ac-64m |\
 	p2w,r619ac-128m |\
-	qxwlan,e2600ac-c2 |\
-	wallys,dr40x9)
+	qxwlan,e2600ac-c2)
 		nand_do_upgrade "$1"
 		;;
 	glinet,gl-b2200)
@@ -151,8 +258,15 @@ platform_do_upgrade() {
 		;;
 	asus,rt-ac42u |\
 	asus,rt-ac58u)
+		local magic=$(get_magic_long "$1")
+		CI_UBIPART="UBI_DEV"
 		CI_KERNPART="linux"
-		nand_do_upgrade "$1"
+		if [ "$magic" == "27051956" ]; then
+			echo "Got Asus factory image."
+			asus_nand_upgrade_factory 50409472 "$1"
+		else
+			asus_nand_upgrade_tar 20951040 "$1"
+		fi
 		;;
 	cellc,rtl30vw)
 		CI_UBIPART="ubifs"
@@ -161,44 +275,25 @@ platform_do_upgrade() {
 	compex,wpj419)
 		nand_do_upgrade "$1"
 		;;
-	google,wifi)
-		export_bootdevice
-		export_partdevice CI_ROOTDEV 0
-		CI_KERNPART="kernel"
-		CI_ROOTPART="rootfs"
-		emmc_do_upgrade "$1"
-		;;
 	linksys,ea6350v3 |\
 	linksys,ea8300 |\
-	linksys,mr8300 |\
-	linksys,whw01 |\
-	linksys,whw03v2)
+	linksys,mr8300)
 		platform_do_upgrade_linksys "$1"
 		;;
-	linksys,whw03)
-		platform_do_upgrade_linksys_emmc "$1"
-		;;
-	meraki,mr33 |\
-	meraki,mr74)
+	meraki,mr33)
 		CI_KERNPART="part.safe"
 		nand_do_upgrade "$1"
 		;;
 	mikrotik,cap-ac|\
 	mikrotik,hap-ac2|\
-	mikrotik,hap-ac3-lte6-kit|\
 	mikrotik,lhgg-60ad|\
-	mikrotik,sxtsq-5-ac|\
-	mikrotik,wap-ac|\
-	mikrotik,wap-ac-lte|\
-	mikrotik,wap-r-ac)
+	mikrotik,sxtsq-5-ac)
 		[ "$(rootfs_type)" = "tmpfs" ] && mtd erase firmware
 		default_do_upgrade "$1"
 		;;
 	mikrotik,hap-ac3)
 		platform_do_upgrade_mikrotik_nand "$1"
 		;;
-	netgear,rbr40|\
-	netgear,rbs40|\
 	netgear,rbr50 |\
 	netgear,rbs50 |\
 	netgear,srr60 |\
@@ -212,17 +307,8 @@ platform_do_upgrade() {
 		PART_NAME="inactive"
 		platform_do_upgrade_dualboot_datachk "$1"
 		;;
-	sony,ncp-hg100-cellular)
-		sony_emmc_do_upgrade "$1"
-		;;
 	teltonika,rutx10 |\
-	teltonika,rutx50 |\
-	zte,mf18a |\
-	zte,mf282plus |\
 	zte,mf286d |\
-	zte,mf287 |\
-	zte,mf287plus |\
-	zte,mf287pro |\
 	zte,mf289f)
 		CI_UBIPART="rootfs"
 		nand_do_upgrade "$1"
@@ -238,9 +324,7 @@ platform_do_upgrade() {
 
 platform_copy_config() {
 	case "$(board_name)" in
-	glinet,gl-b2200 |\
-	google,wifi |\
-	linksys,whw03)
+	glinet,gl-b2200)
 		emmc_copy_config
 		;;
 	esac

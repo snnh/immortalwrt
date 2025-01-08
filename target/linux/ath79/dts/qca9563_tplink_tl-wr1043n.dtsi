@@ -4,7 +4,6 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -24,27 +23,23 @@
 		};
 
 		wifi_green {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:wlan";
 			gpios = <&gpio 19 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy0tpt";
 		};
 
 		wifi_wps {
-			function = LED_FUNCTION_WPS;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:wps";
 			gpios = <&gpio 1 GPIO_ACTIVE_LOW>;
 		};
 
 		wan {
-			function = LED_FUNCTION_WAN;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:wan";
 			gpios = <&gpio 15 GPIO_ACTIVE_LOW>;
 		};
 
 		wan_fail {
-			function = LED_FUNCTION_WAN;
-			color = <LED_COLOR_ID_ORANGE>;
+			label = "orange:wan";
 			gpios = <&gpio 16 GPIO_ACTIVE_LOW>;
 		};
 
@@ -91,6 +86,7 @@
 &mdio0 {
 	status = "okay";
 
+	phy-mask = <0>;
 	phy0: ethernet-phy@0 {
 		reg = <0>;
 		phy-mode = "sgmii";

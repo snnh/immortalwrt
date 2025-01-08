@@ -10,7 +10,6 @@ access a PHY, in-band-status is unneeded as we have link-status via
 MDIO. Switch off SGMII in-band autonegotiation using magic values.
 
 Reported-by: Chen Minqiang <ptpt52@gmail.com>
-Reported-by: Chukun Pan <amadeus@jmu.edu.cn>
 Reported-by: Yevhen Kolomeiko <jarvis2709@gmail.com>
 Tested-by: Yevhen Kolomeiko <jarvis2709@gmail.com>
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
@@ -20,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/net/phy/realtek.c
 +++ b/drivers/net/phy/realtek.c
-@@ -815,8 +815,8 @@ static int rtl822x_write_mmd(struct phy_
+@@ -786,8 +786,8 @@ static int rtl822x_write_mmd(struct phy_
  static int rtl822xb_config_init(struct phy_device *phydev)
  {
  	bool has_2500, has_sgmii;
@@ -30,7 +29,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  	has_2500 = test_bit(PHY_INTERFACE_MODE_2500BASEX,
  			    phydev->host_interfaces) ||
-@@ -866,7 +866,29 @@ static int rtl822xb_config_init(struct p
+@@ -837,7 +837,29 @@ static int rtl822xb_config_init(struct p
  	if (ret < 0)
  		return ret;
  

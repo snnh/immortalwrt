@@ -31,16 +31,13 @@ ubootenv_mtdinfo () {
 }
 
 case "$board" in
-arris,tr4400-v2|\
-askey,rt4230w-rev6)
+arris,rac2v1a|\
+askey,rt4230w-rev6|\
+askey,rt4230w-rev9.3)
 	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x40000" "0x20000"
 	;;
 edgecore,ecw5410)
 	ubootenv_add_uci_config "/dev/mtd11" "0x0" "0x10000" "0x10000"
-	;;
-extreme,ap3935)
-	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000"
-	ubootenv_add_uci_config "/dev/mtd3" "0x0" "0x10000" "0x10000"
 	;;
 linksys,ea7500-v1|\
 linksys,ea8500)
@@ -49,16 +46,9 @@ linksys,ea8500)
 netgear,r7800)
 	ubootenv_add_uci_config "/dev/mtd2" "0x0" "0x040000" "0x20000"
 	;;
-nokia,ac400i)
-	ubootenv_add_uci_config "/dev/mtd20" "0x0" "0x040000" "0x20000"
-	;;
 qcom,ipq8064-ap148|\
 qcom,ipq8064-db149)
 	ubootenv_add_uci_config $(ubootenv_mtdinfo)
-	;;
-xiaomi,mi-router-hd)
-	ubootenv_add_uci_config "/dev/mtd9" "0x0" "0x10000" "0x10000"
-	ubootenv_add_uci_sys_config "/dev/mtd12" "0x0" "0x10000" "0x10000"
 	;;
 ubnt,unifi-ac-hd|\
 zyxel,nbg6817)
@@ -67,6 +57,6 @@ zyxel,nbg6817)
 esac
 
 config_load ubootenv
-config_foreach ubootenv_add_app_config
+config_foreach ubootenv_add_app_config ubootenv
 
 exit 0

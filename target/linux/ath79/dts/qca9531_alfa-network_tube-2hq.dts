@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 
-#include <dt-bindings/leds/common.h>
-
 #include "qca9531_alfa-network_r36a.dtsi"
 
 / {
@@ -21,8 +19,7 @@
 		pinctrl-0 = <&enable_gpio4 &enable_gpio16>;
 
 		lan {
-			function = LED_FUNCTION_LAN;
-			color = <LED_COLOR_ID_BLUE>;
+			label = "blue:lan";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
@@ -49,8 +46,10 @@
 };
 
 &eth0 {
-	nvmem-cells = <&macaddr_art_1002 (-1)>;
+	nvmem-cells = <&macaddr_art_1002>;
 	nvmem-cell-names = "mac-address";
+
+	mac-address-increment = <(-1)>;
 };
 
 &eth1 {

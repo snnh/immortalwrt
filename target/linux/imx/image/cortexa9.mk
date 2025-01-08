@@ -1,7 +1,5 @@
 DEVICE_VARS += MKUBIFS_OPTS UBOOT
 
-include common.mk
-
 define Build/boot-overlay
 	rm -rf $@.boot
 	mkdir -p $@.boot
@@ -46,25 +44,29 @@ define Build/recovery-scr
 	-d ./recovery-$(DEVICE_NAME) $@
 endef
 
-define Build/apalis-emmc
-	$(Build/imx-combined-image-prepare)
-	$(Build/imx-combined-image)
-	$(Build/imx-combined-image-clean)
+define Build/imx6-combined-image-prepare
+	rm -rf $@.boot
+	mkdir -p $@.boot
 endef
 
-define Build/ventana-img
-	rm -rf $@.boot
-	mkdir -p $@.boot/boot
-	$(CP) $(IMAGE_KERNEL) $@.boot/boot/uImage
+define Build/imx6-combined-image-clean
+	rm -rf $@.boot $@.fs
+endef
+
+define Build/imx6-combined-image
+	$(CP) $(IMAGE_KERNEL) $@.boot/uImage
+
 	$(foreach dts,$(DEVICE_DTS), \
 		$(CP) \
 			$(DTS_DIR)/$(dts).dtb \
-			$@.boot/boot/;
+			$@.boot/;
 	)
+
 	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
 		-n '$(DEVICE_ID) OpenWrt bootscript' \
 		-d bootscript-$(DEVICE_NAME) \
-		$@.boot/boot/6x_bootscript-ventana
+		$@.boot/boot.scr
+
 	cp $@ $@.fs
 
 	$(SCRIPT_DIR)/gen_image_generic.sh $@ \
@@ -73,8 +75,24 @@ define Build/ventana-img
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
 		$@.fs \
 		1024
-	$(Build/imx-combined-image-clean)
 endef
+
+define Build/imx6-sdcard
+	$(Build/imx6-combined-image-prepare)
+
+	$(CP) $(STAGING_DIR_IMAGE)/$(UBOOT)-u-boot.img $@.boot/u-boot.img
+	$(Build/imx6-combined-image)
+	dd if=$(STAGING_DIR_IMAGE)/$(UBOOT)-SPL of=$@ bs=1024 seek=1 conv=notrunc
+
+	$(Build/imx6-combined-image-clean)
+endef
+
+define Build/apalis-emmc
+	$(Build/imx6-combined-image-prepare)
+	$(Build/imx6-combined-image)
+	$(Build/imx6-combined-image-clean)
+endef
+
 
 define Device/Default
   PROFILES := Default
@@ -84,7 +102,6 @@ define Device/Default
   KERNEL_NAME := zImage
   KERNEL := kernel-bin | uImage none
   KERNEL_LOADADDR := 0x10008000
-  DTS_DIR := $(DTS_DIR)/nxp/imx
   IMAGES :=
 endef
 
@@ -121,14 +138,12 @@ define Device/gateworks_ventana
 	imx6q-gw5913
   DEVICE_PACKAGES := kmod-sky2 kmod-sound-core kmod-sound-soc-imx \
 	kmod-sound-soc-imx-sgtl5000 kmod-can kmod-can-flexcan kmod-can-raw \
-	kmod-hwmon-gsc kmod-leds-gpio kmod-pps-gpio kobs-ng \
-	kmod-gpio-button-hotplug
+	kmod-hwmon-gsc kmod-leds-gpio kmod-pps-gpio kobs-ng
   KERNEL += | boot-overlay
-  IMAGES := img.gz nand.ubi bootfs.tar.gz dtb
+  IMAGES := nand.ubi bootfs.tar.gz dtb
   IMAGE/nand.ubi := append-ubi
   IMAGE/bootfs.tar.gz := bootfs.tar.gz
   IMAGE/dtb := install-dtb
-  IMAGE/img.gz := append-rootfs | pad-extra 128k | ventana-img | gzip
   UBINIZE_PARTS = boot=$$(KDIR_KERNEL_IMAGE).boot.ubifs=15
   PAGESIZE := 2048
   BLOCKSIZE := 128k
@@ -160,7 +175,7 @@ define Device/solidrun_cubox-i
   KERNEL_SUFFIX := -zImage
   FILESYSTEMS := squashfs
   IMAGES := combined.bin dtb
-  IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx-sdcard
+  IMAGE/combined.bin := append-rootfs | pad-extra 128k | imx6-sdcard
   IMAGE/dtb := install-dtb
 endef
 TARGET_DEVICES += solidrun_cubox-i

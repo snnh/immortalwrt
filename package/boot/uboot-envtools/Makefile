@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
-PKG_VERSION:=2024.07
+PKG_VERSION:=2023.01
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
@@ -17,7 +17,7 @@ PKG_SOURCE_URL:= \
     https://ftp.denx.de/pub/u-boot \
     https://mirror.cyberbits.eu/u-boot \
     ftp://ftp.denx.de/pub/u-boot
-PKG_HASH:=f591da9ab90ef3d6b3d173766d0ddff90c4ed7330680897486117df390d83c8f
+PKG_HASH:=69423bad380f89a0916636e89e6dcbd2e4512d584308d922d1039d1e4331950f
 PKG_SOURCE_SUBDIR:=$(PKG_DISTNAME)-$(PKG_VERSION)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_DISTNAME)-$(PKG_VERSION)
 
@@ -45,19 +45,18 @@ define Package/uboot-envtools/description
 endef
 
 define Build/Configure
-	$(call Build/Compile/Default,tools-only_defconfig)
+	touch $(PKG_BUILD_DIR)/include/config.h
+	mkdir -p $(PKG_BUILD_DIR)/include/config
+	touch $(PKG_BUILD_DIR)/include/config/auto.conf
+	mkdir -p $(PKG_BUILD_DIR)/include/generated
+	touch $(PKG_BUILD_DIR)/include/generated/autoconf.h
 endef
 
-define Build/Compile
-	$(call Build/Compile/Default,envtools)
-endef
-
-# We need to override the ARCH passed by buildsystem as otherwise the defconfig
-# for tools-only wont match and the includes for sandbox will be dropped
 MAKE_FLAGS += \
-	ARCH="sandbox" \
 	TARGET_CFLAGS="$(TARGET_CFLAGS)" \
-	TARGET_LDFLAGS="$(TARGET_LDFLAGS)"
+	TARGET_LDFLAGS="$(TARGET_LDFLAGS)" \
+	no-dot-config-targets=envtools \
+	envtools
 
 define Package/uboot-envtools/conffiles
 /etc/config/ubootenv
@@ -71,9 +70,6 @@ define Package/uboot-envtools/install
 	$(LN) fw_printenv $(1)/usr/sbin/fw_setenv
 	$(INSTALL_BIN) ./files/fw_printsys $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/fw_setsys $(1)/usr/sbin
-	$(INSTALL_BIN) ./files/fw_loadenv $(1)/usr/sbin
-	$(INSTALL_DIR) $(1)/etc/board.d
-	$(INSTALL_DATA) ./files/fw_defaults $(1)/etc/board.d/05_fw_defaults
 	$(INSTALL_DIR) $(1)/lib
 	$(INSTALL_DATA) ./files/uboot-envtools.sh $(1)/lib
 	$(INSTALL_DIR) $(1)/etc/uci-defaults

@@ -10,6 +10,7 @@
 #include <linux/devfreq.h>
 #include <linux/devfreq-event.h>
 #include <linux/interrupt.h>
+#include <linux/iversion.h>
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/of.h>
@@ -19,6 +20,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/rwsem.h>
 #include <linux/suspend.h>
+#include <linux/version.h>
 
 #include <soc/rockchip/rockchip_sip.h>
 
@@ -748,7 +750,11 @@ static int rk3328_dmcfreq_probe(struct platform_device *pdev)
 		return PTR_ERR(data->dmc_clk);
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
+	data->edev = devfreq_event_get_edev_by_phandle(dev, 0);
+#else
 	data->edev = devfreq_event_get_edev_by_phandle(dev, "devfreq-events", 0);
+#endif
 	if (IS_ERR(data->edev))
 		return -EPROBE_DEFER;
 
@@ -811,7 +817,11 @@ err_free_opp:
 	return ret;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 static int rk3328_dmcfreq_remove(struct platform_device *pdev)
+#else
+static void rk3328_dmcfreq_remove(struct platform_device *pdev)
+#endif
 {
 	struct rk3328_dmcfreq *dmcfreq = dev_get_drvdata(&pdev->dev);
 
@@ -821,7 +831,9 @@ static int rk3328_dmcfreq_remove(struct platform_device *pdev)
 	devm_devfreq_unregister_opp_notifier(dmcfreq->dev, dmcfreq->devfreq);
 	dev_pm_opp_of_remove_table(dmcfreq->dev);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	return 0;
+#endif
 }
 
 static const struct of_device_id rk3328dmc_devfreq_of_match[] = {
@@ -832,7 +844,11 @@ MODULE_DEVICE_TABLE(of, rk3328dmc_devfreq_of_match);
 
 static struct platform_driver rk3328_dmcfreq_driver = {
 	.probe	= rk3328_dmcfreq_probe,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 10, 0)
 	.remove = rk3328_dmcfreq_remove,
+#else
+	.remove_new = rk3328_dmcfreq_remove,
+#endif
 	.driver = {
 		.name	= "rk3328-dmc-freq",
 		.pm	= &rk3328_dmcfreq_pm,

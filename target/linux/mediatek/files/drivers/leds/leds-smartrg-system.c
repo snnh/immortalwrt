@@ -7,6 +7,7 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/of.h>
+#include <linux/version.h>
 
 /**
  * Driver for SmartRG RGBW LED microcontroller.
@@ -159,11 +160,14 @@ srg_led_init_led(struct srg_led_ctrl *sysled_ctrl, struct device_node *np)
 
 static int
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6,6,0)
+srg_led_probe(struct i2c_client *client, const struct i2c_device_id *id)
+#else
 srg_led_probe(struct i2c_client *client)
+#endif
 {
 	struct device_node *np = client->dev.of_node, *child;
 	struct srg_led_ctrl *sysled_ctrl;
-	int err;
 
 	sysled_ctrl = devm_kzalloc(&client->dev, sizeof(*sysled_ctrl), GFP_KERNEL);
 	if (!sysled_ctrl)
@@ -171,13 +175,11 @@ srg_led_probe(struct i2c_client *client)
 
 	sysled_ctrl->client = client;
 
-	err = devm_mutex_init(&client->dev, &sysled_ctrl->lock);
-	if (err)
-		return err;
+	mutex_init(&sysled_ctrl->lock);
 
 	i2c_set_clientdata(client, sysled_ctrl);
 
-	for_each_available_child_of_node(np, child) {
+	for_each_child_of_node(np, child) {
 		if (srg_led_init_led(sysled_ctrl, child))
 			continue;
 
@@ -194,6 +196,23 @@ static void srg_led_disable(struct i2c_client *client)
 
 	for (i = 1; i < 10; i++)
 		srg_led_i2c_write(sysled_ctrl, i, 0);
+}
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5,16,0)
+static void
+#else
+static int
+#endif
+srg_led_remove(struct i2c_client *client)
+{
+	struct srg_led_ctrl *sysled_ctrl = i2c_get_clientdata(client);
+
+	srg_led_disable(client);
+	mutex_destroy(&sysled_ctrl->lock);
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5,16,0)
+	return 0;
+#endif
 }
 
 static const struct i2c_device_id srg_led_id[] = {
@@ -214,7 +233,7 @@ static struct i2c_driver srg_sysled_driver = {
 		.of_match_table = of_srg_led_match,
 	},
 	.probe		= srg_led_probe,
-	.remove		= srg_led_disable,
+	.remove		= srg_led_remove,
 	.id_table	= srg_led_id,
 };
 module_i2c_driver(srg_sysled_driver);

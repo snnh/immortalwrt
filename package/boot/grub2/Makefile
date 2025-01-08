@@ -7,7 +7,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=grub
 PKG_VERSION:=2.12
-PKG_RELEASE:=1
+PKG_RELEASE:=6
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/grub
@@ -35,13 +35,15 @@ define Package/grub2/Default
   SECTION:=boot
   TITLE:=GRand Unified Bootloader ($(2))
   URL:=http://www.gnu.org/software/grub/
-  DEPENDS:=@TARGET_$(1)
+  DEPENDS:=@(TARGET_x86||TARGET_armsr||TARGET_armvirt||TARGET_phytium_armv8||TARGET_loongarch64)
   VARIANT:=$(2)
 endef
 
 Package/grub2=$(call Package/grub2/Default,x86,pc)
 Package/grub2-efi=$(call Package/grub2/Default,x86,efi)
 Package/grub2-efi-arm=$(call Package/grub2/Default,armsr,efi)
+Package/grub2-efi-arm=$(call Package/grub2/Default,armvirt,efi)
+Package/grub2-efi-arm=$(call Package/grub2/Default,phytium_armv8,efi)
 Package/grub2-efi-loongarch64=$(call Package/grub2/Default,loongarch64,efi)
 
 define Package/grub2-editenv

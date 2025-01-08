@@ -7,16 +7,15 @@ include $(TOPDIR)/rules.mk
 ARCH:=loongarch64
 BOARD:=loongarch64
 BOARDNAME:=Loongson LoongArch
-FEATURES:=audio display ext4 pcie boot-part rootfs-part rtc usb targz
-SUBTARGETS:=generic
+FEATURES:=audio display squashfs ext4 pcie boot-part rootfs-part rtc usb targz
 
 KERNEL_PATCHVER:=6.6
 
-KERNELNAME:=vmlinuz.efi dtbs
+KERNELNAME:=vmlinuz.efi
 
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	partx-utils blkid fdisk automount grub2-efi-loongarch64
+	partx-utils blkid e2fsprogs grub2-efi-loongarch64 htop wpad-openssl
 
 $(eval $(call BuildTarget))

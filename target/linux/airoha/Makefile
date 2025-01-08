@@ -3,11 +3,13 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=airoha
 BOARDNAME:=Airoha ARM
-SUBTARGETS:=en7523 an7581
-FEATURES:=dt squashfs nand ramdisk gpio
+CPU_TYPE:=cortex-a7
+FEATURES:=dt squashfs nand ramdisk gpio source-only
 
-KERNEL_PATCHVER:=6.6
+KERNEL_PATCHVER:=5.15
 
 include $(INCLUDE_DIR)/target.mk
+
+KERNELNAME:=Image dtbs
 
 $(eval $(call BuildTarget))

@@ -4,7 +4,6 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-#include <dt-bindings/leds/common.h>
 
 / {
 	model = "Netgear EX7300 v2";
@@ -41,20 +40,17 @@
 		compatible = "gpio-leds";
 
 		led_power_green: power_green {
-			function = LED_FUNCTION_POWER;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:power";
 			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
 		};
 
 		led_power_amber: power_amber {
-			function = LED_FUNCTION_POWER;
-			color = <LED_COLOR_ID_AMBER>;
+			label = "amber:power";
 			gpios = <&led_gpio 7 GPIO_ACTIVE_LOW>;
 		};
 
 		wps_green {
-			function = LED_FUNCTION_WPS;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:wps";
 			gpios = <&led_gpio 6 GPIO_ACTIVE_LOW>;
 		};
 
@@ -128,6 +124,10 @@
 	};
 };
 
+&pll {
+	clocks = <&extosc>;
+};
+
 &spi {
 	status = "okay";
 
@@ -186,22 +186,20 @@
 				label = "artmtd";
 				reg = <0xfe0000 0x10000>;
 
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-					macaddr_artmtd_0: macaddr@0 {
-						reg = <0x0 0x6>;
-					};
+				macaddr_artmtd_0: macaddr@0 {
+					reg = <0x0 0x6>;
+				};
 
-					macaddr_artmtd_6: macaddr@6 {
-						reg = <0x6 0x6>;
-					};
+				macaddr_artmtd_6: macaddr@6 {
+					reg = <0x6 0x6>;
+				};
 
-					macaddr_artmtd_c: macaddr@c {
-						reg = <0xc 0x6>;
-					};
+				macaddr_artmtd_c: macaddr@c {
+					reg = <0xc 0x6>;
 				};
 			};
 
@@ -210,18 +208,16 @@
 				reg = <0xff0000 0x10000>;
 				read-only;
 
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-					cal_art_1000: cal@1000 {
-						reg = <0x1000 0x440>;
-					};
+				cal_art_1000: cal@1000 {
+					reg = <0x1000 0x440>;
+				};
 
-					precal_art_5000: precal@5000 {
-						reg = <0x5000 0x2f20>;
-					};
+				precal_art_5000: precal@5000 {
+					reg = <0x5000 0x2f20>;
 				};
 			};
 		};

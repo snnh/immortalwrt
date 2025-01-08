@@ -32,8 +32,7 @@
 			status = "okay";
 			phy-mode = "sgmii";
 			phy-handle = <&phy4>;
-			nvmem-cells = <&macaddr_eeprom_0 0>;
-			nvmem-cell-names = "mac-address";
+			mtd-mac-address = <&eeprom 0>;
 		};
 	};
 
@@ -45,8 +44,8 @@
 			status = "okay";
 			phy-mode = "sgmii";
 			phy-handle = <&phy8>;
-			nvmem-cells = <&macaddr_eeprom_0 4>;
-			nvmem-cell-names = "mac-address";
+			mtd-mac-address = <&eeprom 0>;
+			mtd-mac-address-increment = <(4)>;
 		};
 
 		ethernet@1 {
@@ -54,9 +53,8 @@
 			status = "okay";
 			phy-mode = "sgmii";
 			phy-handle = <&phy9>;
-			nvmem-cells = <&macaddr_eeprom_0 5>;
-			nvmem-cell-names = "mac-address";
+			mtd-mac-address = <&eeprom 0>;
+			mtd-mac-address-increment = <(5)>;
 		};
 	};
 };
-

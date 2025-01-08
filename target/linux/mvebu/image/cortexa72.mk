@@ -1,16 +1,3 @@
-define Device/FitImage
-  KERNEL_SUFFIX := -uImage.itb
-  KERNEL = kernel-bin | gzip | fit gzip $$(KDIR)/image-$$(DEVICE_DTS).dtb
-  KERNEL_NAME := Image
-endef
-
-define Device/UbiFit
-  KERNEL_IN_UBI := 1
-  IMAGES := factory.ubi sysupgrade.bin
-  IMAGE/factory.ubi := append-ubi
-  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
-endef
-
 define Device/globalscale_mochabin
   $(call Device/Default-arm64)
   DEVICE_VENDOR := Globalscale
@@ -65,19 +52,6 @@ define Device/marvell_macchiatobin-singleshot
 endef
 TARGET_DEVICES += marvell_macchiatobin-singleshot
 
-define Device/mikrotik_rb5009
-  $(call Device/Default-arm64)
-  $(Device/NAND-128K)
-  $(call Device/FitImage)
-  $(call Device/UbiFit)
-  DEVICE_VENDOR := MikroTik
-  DEVICE_MODEL := RB5009
-  SOC := armada-7040
-  KERNEL_LOADADDR := 0x22000000
-  DEVICE_PACKAGES += kmod-i2c-gpio yafut
-endef
-TARGET_DEVICES += mikrotik_rb5009
-
 define Device/marvell_clearfog-gt-8k
   $(call Device/Default-arm64)
   DEVICE_VENDOR := SolidRun
@@ -91,28 +65,28 @@ TARGET_DEVICES += marvell_clearfog-gt-8k
 
 define Device/iei_puzzle-m901
   $(call Device/Default-arm64)
-  SOC := cn9131
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M901
-  DEVICE_PACKAGES += kmod-rtc-ds1307
+  SOC := cn9131
 endef
 TARGET_DEVICES += iei_puzzle-m901
 
 define Device/iei_puzzle-m902
   $(call Device/Default-arm64)
-  SOC := cn9132
   DEVICE_VENDOR := iEi
   DEVICE_MODEL := Puzzle-M902
-  DEVICE_PACKAGES += kmod-rtc-ds1307
+  SOC := cn9132
 endef
 TARGET_DEVICES += iei_puzzle-m902
 
-define Device/solidrun_clearfog-pro
+define Device/qnap_qhora-32x
   $(call Device/Default-arm64)
-  SOC := cn9130
-  DEVICE_VENDOR := SolidRun
-  DEVICE_MODEL := ClearFog Pro
-  DEVICE_PACKAGES += kmod-i2c-mux-pca954x
-  BOOT_SCRIPT := clearfog-pro
+  SOC := cn9132
+  DEVICE_VENDOR := QNAP
+  DEVICE_MODEL := QHora-321/322
+  DEVICE_PACKAGES += kmod-rtc-ds1307
+  DEVICE_DTS := cn9131-db-A cn9131-puzzle-m901 cn9132-db-A cn9132-puzzle-m902
+  SUPPORTED_DEVICES := qnap,qhora-321 qnap,qhora-322 iei,puzzle-m901 iei,puzzle-m902
+  IMAGE/sdcard.img.gz := boot-scr | boot-qnap-img-ext4 | sdcard-img-ext4 | gzip | append-metadata
 endef
-TARGET_DEVICES += solidrun_clearfog-pro
+TARGET_DEVICES += qnap_qhora-32x

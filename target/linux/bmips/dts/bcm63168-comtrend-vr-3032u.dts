@@ -11,11 +11,15 @@
 		led-failsafe = &led_power_green;
 		led-running = &led_power_green;
 		led-upgrade = &led_power_green;
+
+		led-dsl = &led_dsl_green;
+		led-internet = &led_internet_green;
+		led-usb = &led_usb_green;
 	};
 
 	keys {
 		compatible = "gpio-keys-polled";
-		poll-interval = <100>;
+		poll-interval = <20>;
 
 		reset {
 			label = "reset";
@@ -74,27 +78,25 @@
 		label = "red:internet";
 	};
 
-	led@3 {
+	led_dsl_green: led@3 {
 		reg = <3>;
 		active-low;
 		label = "green:dsl";
 	};
 
-	led@4 {
+	led_usb_green: led@4 {
 		reg = <4>;
 		active-low;
-		function = LED_FUNCTION_USB;
-		color = <LED_COLOR_ID_GREEN>;
+		label = "green:usb";
 	};
 
 	led@7 {
 		reg = <7>;
 		active-low;
-		function = LED_FUNCTION_WPS;
-		color = <LED_COLOR_ID_GREEN>;
+		label = "green:wps";
 	};
 
-	led@8 {
+	led_internet_green: led@8 {
 		reg = <8>;
 		active-low;
 		label = "green:internet";
@@ -145,8 +147,7 @@
 	led_power_green: led@20 {
 		reg = <20>;
 		active-low;
-		function = LED_FUNCTION_POWER;
-		color = <LED_COLOR_ID_GREEN>;
+		label = "green:power";
 	};
 };
 
@@ -161,28 +162,15 @@
 		nand-on-flash-bbt;
 		brcm,nand-oob-sector-size = <64>;
 
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			partition@0 {
+			cferom: partition@0 {
 				label = "cferom";
 				reg = <0x0000000 0x0020000>;
 				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					macaddr_cferom_6a0: macaddr@6a0 {
-						reg = <0x6a0 0x6>;
-					};
-				};
 			};
 
 			partition@20000 {
@@ -205,7 +193,6 @@
 			label = "lan2";
 
 			phy-handle = <&phy1>;
-			phy-mode = "mii";
 		};
 
 		port@1 {
@@ -213,7 +200,6 @@
 			label = "lan3";
 
 			phy-handle = <&phy2>;
-			phy-mode = "mii";
 		};
 
 		port@2 {
@@ -221,7 +207,6 @@
 			label = "lan4";
 
 			phy-handle = <&phy3>;
-			phy-mode = "mii";
 		};
 
 		port@3 {
@@ -229,7 +214,6 @@
 			label = "lan1";
 
 			phy-handle = <&phy4>;
-			phy-mode = "mii";
 		};
 	};
 };
@@ -240,4 +224,14 @@
 
 &usbh {
 	status = "okay";
+};
+
+&cferom {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_cferom_6a0: macaddr@6a0 {
+		reg = <0x6a0 0x6>;
+	};
 };

@@ -32,34 +32,27 @@
 		pinctrl-0 = <&power_led_pin>, <&sata0_pins>, <&sata1_pins>, <&sata2_pins>;
 
 		power_led: led-0 {
-			color = <LED_COLOR_ID_RED>;
-			function = LED_FUNCTION_POWER;
+			label = "red:power";
 			gpios = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
 		};
 
 		sata0_led: led-1 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_DISK;
-			/* for to sata2 slot */
-			function-enumerator = <3>;
+			/* for sata2 slot */
+			label = "blue:sata3";
 			gpios = <&gpio4 RK_PC6 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "disk-activity";
 		};
 
 		sata1_led: led-2 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_DISK;
-			/* for to sata0 slot */
-			function-enumerator = <1>;
+			/* for sata0 slot */
+			label = "blue:sata1";
 			gpios = <&gpio4 RK_PC5 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "disk-activity";
 		};
 
 		sata2_led: led-3 {
-			color = <LED_COLOR_ID_BLUE>;
-			function = LED_FUNCTION_DISK;
-			/* for to sata1 slot */
-			function-enumerator = <2>;
+			/* for sata1 slot */
+			label = "blue:sata2";
 			gpios = <&gpio4 RK_PC4 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "disk-activity";
 		};
@@ -332,7 +325,7 @@
 		#clock-cells = <1>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pmic_int>;
-		system-power-controller;
+		rockchip,system-power-controller;
 		vcc1-supply = <&vcc3v3_sys>;
 		vcc2-supply = <&vcc3v3_sys>;
 		vcc3-supply = <&vcc3v3_sys>;
@@ -573,7 +566,8 @@
 		pcie-eth@10,0 {
 			compatible = "pci10ec,8125";
 			reg = <0x000000 0 0 0 0>;
-			realtek,led-data = <0x0 0x0 0x200 0x2b>;
+			label = "eth0";
+			led-data = <0x0 0x0 0x200 0x2b>;
 		};
 	};
 };
@@ -592,7 +586,8 @@
 		pcie-eth@20,0 {
 			compatible = "pci10ec,8125";
 			reg = <0x000000 0 0 0 0>;
-			realtek,led-data = <0x0 0x0 0x200 0x2b>;
+			label = "eth1";
+			led-data = <0x0 0x0 0x200 0x2b>;
 		};
 	};
 };

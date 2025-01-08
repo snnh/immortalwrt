@@ -8,9 +8,10 @@ ARCH:=arm
 BOARD:=sunxi
 BOARDNAME:=Allwinner ARM SoCs
 FEATURES:=usb ext4 display rootfs-part rtc squashfs
-SUBTARGETS:=cortexa8 cortexa7 cortexa53
+SUBTARGETS:=cortexa8 cortexa7 cortexa53 arm926ejs
 
-KERNEL_PATCHVER:=6.6
+KERNEL_PATCHVER:=6.1
+KERNEL_TESTING_PATCHVER:=6.6
 
 KERNELNAME:=zImage dtbs
 
@@ -26,6 +27,6 @@ KERNELNAME:=zImage dtbs
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += uboot-envtools
-DEFAULT_PACKAGES += partx-utils mkf2fs automount cpufreq
+DEFAULT_PACKAGES += partx-utils mkf2fs e2fsprogs
 
 $(eval $(call BuildTarget))

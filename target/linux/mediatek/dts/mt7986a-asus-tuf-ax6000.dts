@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: (GPL-2.0 OR MIT)
 
 /dts-v1/;
-#include <dt-bindings/input/input.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/leds/common.h>
 
 #include "mt7986a.dtsi"
@@ -13,7 +13,6 @@
 
 	aliases {
 		serial0 = &uart0;
-		label-mac-device = &gmac0;
 		led-boot = &led_system;
 		led-failsafe = &led_system;
 		led-running = &led_system;
@@ -22,7 +21,7 @@
 
 	chosen {
 		stdout-path = "serial0:115200n8";
-		bootargs-override = "";
+		bootargs-override = "ubi.mtd=UBI_DEV";
 	};
 
 	memory {
@@ -49,8 +48,7 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_WHITE>;
+			label = "white:wlan";
 			gpios = <&pio 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "phy1tpt";
 		};
@@ -61,8 +59,7 @@
 		};
 
 		wan-red {
-			function = LED_FUNCTION_WAN;
-			color = <LED_COLOR_ID_RED>;
+			label = "red:wan";
 			gpios = <&pio 12 GPIO_ACTIVE_LOW>;
 		};
 
@@ -109,11 +106,8 @@
 	status = "okay";
 
 	gmac0: mac@0 {
-		/* LAN */
 		compatible = "mediatek,eth-mac";
 		reg = <0>;
-		nvmem-cells = <&macaddr_factory_4>;
-		nvmem-cell-names = "mac-address";
 		phy-mode = "2500base-x";
 
 		fixed-link {
@@ -124,7 +118,6 @@
 	};
 
 	gmac1: mac@1 {
-		/* WAN */
 		compatible = "mediatek,eth-mac";
 		reg = <1>;
 		phy-mode = "2500base-x";
@@ -230,33 +223,15 @@
 	pinctrl-0 = <&spi_flash_pins>;
 	status = "okay";
 
-	spi_nand_flash: flash@0 {
+	flash@0 {
 		compatible = "spi-nand";
-		reg = <0>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		reg = <0>;
 
 		spi-max-frequency = <20000000>;
 		spi-tx-bus-width = <4>;
 		spi-rx-bus-width = <4>;
-
-		/*
-		 * ASUS bootloader tries to replace the partitions defined in
-		 * Device Tree and by that also deletes all additional properties
-		 * needed for UBI and NVMEM-on-UBI.
-		 * Prevent this from happening by tricking the loader to delete and
-		 * replace a bait node instead.
-		 */
-		partitions: dummy {
-			compatible = "u-boot-dummy-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			partition@0 {
-				reg = <0x0 0x0>;
-				label = "remove_me";
-			};
-		};
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -270,32 +245,9 @@
 			};
 
 			partition@400000 {
-				compatible = "linux,ubi";
 				reg = <0x400000 0xfc00000>;
 				label = "UBI_DEV";
-
-				volumes {
-					ubi_factory: ubi-volume-factory {
-						volname = "Factory";
-					};
-				};
 			};
-		};
-	};
-};
-
-&ubi_factory {
-	nvmem-layout {
-		compatible = "fixed-layout";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		eeprom_factory_0: eeprom@0 {
-			reg = <0x0 0x1000>;
-		};
-
-		macaddr_factory_4: macaddr@4 {
-			reg = <0x4 0x6>;
 		};
 	};
 };
@@ -332,9 +284,8 @@
 		port@5 {
 			reg = <5>;
 			label = "lan5";
-			phy-mode = "2500base-x";
 			phy-handle = <&phy5>;
-
+			phy-mode = "2500base-x";
 		};
 
 		port@6 {
@@ -418,8 +369,6 @@
 };
 
 &wifi {
-	nvmem-cells = <&eeprom_factory_0>;
-	nvmem-cell-names = "eeprom";
 	pinctrl-names = "default", "dbdc";
 	pinctrl-0 = <&wf_2g_5g_pins>;
 	pinctrl-1 = <&wf_dbdc_pins>;

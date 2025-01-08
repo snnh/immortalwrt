@@ -47,7 +47,7 @@ Signed-off-by: Weijie Gao <weijie.gao@mediatek.com>
 + * Author: Weijie Gao <weijie.gao@mediatek.com>
 + */
 +
-+#include <config.h>
++#include <common.h>
 +#include <dm.h>
 +#include <dm/uclass.h>
 +#include <malloc.h>

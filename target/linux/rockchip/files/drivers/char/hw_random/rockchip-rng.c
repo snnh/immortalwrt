@@ -329,12 +329,12 @@ static int trng_v1_read(struct hwrng *rng, void *buf, size_t max, bool wait)
 	reg_ctrl = rk_rng_readl(rk_rng, TRNG_V1_ISTAT);
 	rk_rng_writel(rk_rng, reg_ctrl, TRNG_V1_ISTAT);
 
-	/* generate 256bit random */
+	/* generate 256 bit random */
 	rk_rng_writel(rk_rng, TRNG_V1_MODE_256_BIT, TRNG_V1_MODE);
 	rk_rng_writel(rk_rng, TRNG_V1_CTRL_RAND, TRNG_V1_CTRL);
 
 	/*
-	 * Generate2 56 bit random data will cost 1024 clock cycles.
+	 * Generate 256 bit random data will cost 1024 clock cycles.
 	 * Estimated at 150M RNG module frequency, it takes 6.7 microseconds.
 	 */
 	udelay(10);
@@ -499,10 +499,9 @@ static int rk_rng_probe(struct platform_device *pdev)
 		rk_rng->mem += rk_rng->soc_data->default_offset;
 
 	rk_rng->clk_num = devm_clk_bulk_get_all(&pdev->dev, &rk_rng->clk_bulks);
-	if (rk_rng->clk_num < 0) {
-		dev_err(&pdev->dev, "failed to get clks property\n");
-		return -ENODEV;
-	}
+	if (rk_rng->clk_num < 0)
+		return dev_err_probe(&pdev->dev, rk_rng->clk_num,
+				     "failed to get clks property\n");
 
 	platform_set_drvdata(pdev, rk_rng);
 

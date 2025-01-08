@@ -4,7 +4,6 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
-#include <dt-bindings/leds/common.h>
 
 / {
 	aliases {
@@ -18,8 +17,7 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			function = LED_FUNCTION_WLAN;
-			color = <LED_COLOR_ID_WHITE>;
+			label = "white:wlan";
 			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "phy1tpt";
 		};
@@ -114,30 +112,10 @@
 				reg = <0x70000 0xf80000>;
 			};
 
-			partition@ff0000 {
+			art: partition@ff0000 {
 				label = "art";
 				reg = <0xff0000 0x10000>;
 				read-only;
-
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
-
-					cal_art_1000: calibration@1000 {
-						reg = <0x1000 0x440>;
-					};
-
-					macaddr_art_1002: macaddr@1002 {
-						compatible = "mac-base";
-						reg = <0x1002 0x6>;
-						#nvmem-cell-cells = <1>;
-					};
-
-					cal_art_5000: calibration@5000 {
-						reg = <0x5000 0x844>;
-					};
-				};
 			};
 		};
 	};
@@ -152,8 +130,9 @@
 
 	pll-data = <0x02000000 0x00000101 0x00001616>;
 
-	nvmem-cells = <&macaddr_art_1002 2>;
+	nvmem-cells = <&macaddr_art_1002>;
 	nvmem-cell-names = "mac-address";
+	mac-address-increment = <2>;
 
 	phy-mode = "rgmii";
 	phy-handle = <&phy0>;
@@ -162,8 +141,7 @@
 &wmac {
 	status = "okay";
 
-	nvmem-cells = <&cal_art_1000>;
-	nvmem-cell-names = "calibration";
+	mtd-cal-data = <&art 0x1000>;
 };
 
 &pcie {
@@ -172,8 +150,6 @@
 	wifi@0,0 {
 		compatible = "qcom,ath10k";
 		reg = <0 0 0 0 0>;
-		nvmem-cells = <&cal_art_5000>;
-		nvmem-cell-names = "calibration";
 	};
 };
 
@@ -191,5 +167,15 @@
 			0x0c 0x00000000 /* PORT6 PAD MODE CTRL */
 			0x7c 0x0000007e /* PORT0_STATUS */
 		>;
+	};
+};
+
+&art {
+	compatible = "nvmem-cells";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	macaddr_art_1002: macaddr@1002 {
+		reg = <0x1002 0x6>;
 	};
 };

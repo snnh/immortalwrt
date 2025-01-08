@@ -22,14 +22,12 @@
 		compatible = "gpio-leds";
 
 		led_power: power {
-			function = LED_FUNCTION_POWER;
-			color = <LED_COLOR_ID_GREEN>;
+			label = "green:power";
 			gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
 		};
 
 		led_orange: wps {
-			function = LED_FUNCTION_WPS;
-			color = <LED_COLOR_ID_ORANGE>;
+			label = "orange:wps";
 			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
 		};
 
@@ -83,13 +81,6 @@
 
 &pcie {
 	status = "okay";
-
-	wifi@0,0 {
-		compatible = "qcom,ath10k";
-		reg = <0x0000 0 0 0 0>;
-		nvmem-cells = <&cal_art_5000>;
-		nvmem-cell-names = "calibration";
-	};
 };
 
 &spi {
@@ -117,23 +108,17 @@
 				read-only;
 			};
 
-			partition@50000 {
+			art: partition@50000 {
 				label = "art";
 				reg = <0x050000 0x10000>;
 				read-only;
 
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-					macaddr_art_1002: macaddr@1002 {
-						reg = <0x1002 0x6>;
-					};
-
-					cal_art_5000: calibration@5000 {
-						reg = <0x5000 0x844>;
-					};
+				macaddr_art_1002: macaddr@1002 {
+					reg = <0x1002 0x6>;
 				};
 			};
 
@@ -148,6 +133,8 @@
 
 &mdio0 {
 	status = "okay";
+
+	phy-mask = <0>;
 
 	phy0: ethernet-phy@3 {
 		reg = <0x3>;
